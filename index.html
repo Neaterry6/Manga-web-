@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<!-- MangaVerse v16 -->
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <!-- v16: base64/data-URI image rendering fix — inline avatars, SVG-initials,
+       uploaded post/comment images and offline reader pages now always render.
+       Explicitly allow data: and blob: images (defense-in-depth vs any CSP). -->
+  <meta http-equiv="Content-Security-Policy" content="img-src * data: blob: 'self'; media-src * data: blob: 'self';" />
+  <!-- MangaDex's image CDN serves a "view on mangadex.org" placeholder when
+       it sees an external Referer. Sending no referrer returns the real art. -->
+  <meta name="referrer" content="no-referrer" />
+  <title>MangaVerse — Read Manga Online (Live + 18+)</title>
+  <!-- v13: mobile reader theming, slide-in drawer + pull-to-refresh, feed suggested-users + Following/Trending/For You tabs, MangaBot own account (DM-able + @bot), bottom-nav-mobile-only guards -->
+  <meta name="description" content="MangaVerse — a modern manga reader. Browse a huge library, bookmark favorites, track your reading history, and read chapters in a clean vertical reader. Free, fast, dark-themed." />
+  <meta name="theme-color" content="#0b0b12" />
+
+  <!-- Open Graph -->
+  <meta property="og:type" content="website" />
+  <meta property="og:title" content="MangaVerse — Read Manga Online" />
+  <meta property="og:description" content="A modern, dark-themed manga reader with accounts, bookmarks, reading history and a clean vertical reader." />
+  <meta property="og:site_name" content="MangaVerse" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="MangaVerse — Read Manga Online" />
+  <meta name="twitter:description" content="A modern, dark-themed manga reader with accounts, bookmarks and a clean reader." />
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Sora:wght@400;600;700;800&display=swap" rel="stylesheet" />
+  <!-- v14 -->
+  <link rel="stylesheet" href="css/styles.css?v=16" />
+  <link rel="stylesheet" href="css/mobile-redesign.css?v=16" />
+</head>
+<body>
+  <!-- Animated background -->
+  <div class="bg-aurora" aria-hidden="true"></div>
+  <div class="bg-grid" aria-hidden="true"></div>
+
+  <!-- Top navigation -->
+  <header class="nav" id="nav">
+    <div class="nav-inner">
+      <a class="brand" href="#/" data-link>
+        <span class="brand-mark"><i data-lucide="book-open"></i></span>
+        <span class="brand-text">Manga<span class="accent">Verse</span></span>
+      </a>
+
+      <div class="nav-search" id="navSearch">
+        <i data-lucide="search"></i>
+        <input type="text" id="globalSearch" placeholder="Search manga, genres, authors…" autocomplete="off" />
+        <kbd>/</kbd>
+      </div>
+
+      <nav class="nav-links">
+        <a href="#/" data-link class="nav-link"><i data-lucide="home"></i><span>Home</span></a>
+        <a href="#/library" data-link class="nav-link"><i data-lucide="library"></i><span>Library</span></a>
+        <a href="#/feed" data-link class="nav-link"><i data-lucide="rss"></i><span>Feed</span></a>
+        <a href="#/chat" data-link class="nav-link auth-only"><i data-lucide="message-circle"></i><span>Chat</span></a>
+        <a href="#/bookmarks" data-link class="nav-link auth-only"><i data-lucide="bookmark"></i><span>Bookmarks</span></a>
+        <a href="#/history" data-link class="nav-link auth-only"><i data-lucide="history"></i><span>History</span></a>
+        <a href="#/adult" data-link class="nav-link nav-link-adult"><i data-lucide="flame"></i><span>18+</span></a>
+      </nav>
+
+      <div class="nav-tools" id="navTools">
+        <div class="lang-control" title="Chapter language — loads chapters translated to this language">
+          <i data-lucide="languages"></i>
+          <select id="chapterLang" aria-label="Chapter language"></select>
+        </div>
+        <div class="lang-control" title="Translate the site text (titles, synopses, labels) to this language">
+          <i data-lucide="globe"></i>
+          <select id="uiLang" aria-label="Translate site to"></select>
+        </div>
+      </div>
+
+      <div class="nav-account" id="navAccount"><!-- injected --></div>
+      <button class="nav-burger" id="navBurger" aria-label="Menu"><i data-lucide="menu"></i></button>
+    </div>
+    <div class="nav-mobile" id="navMobile"><!-- injected mobile links --></div>
+  </header>
+
+  <!-- Main routed view -->
+  <main id="app" class="app"><!-- routed content --></main>
+
+  <!-- Mobile bottom navigation (Home / Search / Post / Chat / Profile) -->
+  <nav class="bottom-nav" id="bottomNav" aria-label="Primary">
+    <a href="#/" data-link class="bn-item" data-bn="/"><i data-lucide="home"></i><span>Home</span></a>
+    <a href="#/search" data-link class="bn-item" data-bn="/search"><i data-lucide="search"></i><span>Search</span></a>
+    <a href="#/post" data-link class="bn-item bn-post" data-bn="/post"><i data-lucide="plus"></i><span>Post</span></a>
+    <a href="#/notifications" data-link class="bn-item bn-notif" data-bn="/notifications"><i data-lucide="bell"></i><span class="bn-badge" id="bnNotifBadge" hidden>0</span><span>Alerts</span></a>
+    <a href="#/chat" data-link class="bn-item" data-bn="/chat"><i data-lucide="message-circle"></i><span>Chat</span></a>
+    <a href="#/profile" data-link class="bn-item" data-bn="/profile"><i data-lucide="user"></i><span>Profile</span></a>
+  </nav>
+
+  <!-- Toast container -->
+  <div class="toasts" id="toasts" aria-live="polite"></div>
+
+  <!-- Auth modal -->
+  <div class="modal-overlay" id="authModal" aria-hidden="true">
+    <div class="modal auth-card" role="dialog" aria-modal="true" aria-label="Account">
+      <button class="modal-close" id="authClose" aria-label="Close"><i data-lucide="x"></i></button>
+      <div class="auth-tabs">
+        <button class="auth-tab active" data-tab="login">Log In</button>
+        <button class="auth-tab" data-tab="signup">Sign Up</button>
+      </div>
+
+      <form class="auth-form" id="loginForm" novalidate>
+        <h2>Welcome back</h2>
+        <p class="auth-sub">Log in to sync bookmarks &amp; reading history.</p>
+        <label>Email or Username
+          <input type="text" name="identifier" autocomplete="username" required />
+        </label>
+        <label>Password
+          <input type="password" name="password" autocomplete="current-password" required />
+        </label>
+        <div class="form-error" data-error></div>
+        <button type="submit" class="btn btn-primary btn-block">Log In</button>
+      </form>
+
+      <form class="auth-form hidden" id="signupForm" novalidate>
+        <h2>Create your account</h2>
+        <p class="auth-sub">It's free. Everything is stored locally in your browser.</p>
+        <label>Username
+          <input type="text" name="username" autocomplete="username" required minlength="3" />
+        </label>
+        <label>Email
+          <input type="email" name="email" autocomplete="email" required />
+        </label>
+        <label>Password
+          <input type="password" name="password" autocomplete="new-password" required minlength="6" />
+        </label>
+        <label>Confirm Password
+          <input type="password" name="confirm" autocomplete="new-password" required />
+        </label>
+        <div class="form-error" data-error></div>
+        <button type="submit" class="btn btn-primary btn-block">Create Account</button>
+      </form>
+
+      <p class="auth-note"><i data-lucide="shield"></i> Accounts are stored locally by default. Connect Supabase in <a href="#/settings" data-link>Settings</a> to sign in with the same account across devices.</p>
+    </div>
+  </div>
+
+  <!-- Age-gate (18+) modal -->
+  <div class="modal-overlay" id="ageModal" aria-hidden="true">
+    <div class="modal age-card" role="dialog" aria-modal="true" aria-label="Age verification">
+      <div class="age-badge"><i data-lucide="flame"></i> 18+</div>
+      <h2>Mature content ahead</h2>
+      <p class="age-text">This area contains explicit adult manga (erotica &amp; hentai) intended for adults only. By entering you confirm that you are <strong>18 years or older</strong> and that adult content is legal to view where you live.</p>
+      <div class="age-actions">
+        <button class="btn btn-primary btn-block" id="ageYes"><i data-lucide="check"></i> I'm 18 or older — Enter</button>
+        <button class="btn btn-ghost btn-block" id="ageNo"><i data-lucide="arrow-left"></i> Take me back</button>
+      </div>
+      <p class="age-note"><i data-lucide="shield"></i> Your choice is remembered only on this device.</p>
+    </div>
+  </div>
+
+  <footer class="footer">
+    <div class="footer-inner">
+      <div class="footer-brand">
+        <span class="brand-mark sm"><i data-lucide="book-open"></i></span>
+        Manga<span class="accent">Verse</span>
+      </div>
+      <div class="footer-links">
+        <a href="#/docs" data-link>Docs</a>
+        <a href="#/api" data-link>API</a>
+        <a href="#/feed" data-link>Feed</a>
+        <a href="#/library" data-link>Library</a>
+      </div>
+      <p class="footer-copy">© 2026 MangaVerse · Made with <i data-lucide="heart"></i> for readers</p>
+    </div>
+  </footer>
+
+  <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
+  <script src="js/data.js?v=16"></script>
+  <script src="js/auth.js?v=16"></script>
+  <script src="js/cloud.js?v=16"></script>
+  <script src="js/social.js?v=16"></script>
+  <script src="js/translate.js?v=16"></script>
+  <script src="js/api.js?v=16"></script>
+  <script src="js/app.js?v=16"></script>
+</body>
+</html>
