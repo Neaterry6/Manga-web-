@@ -1,0 +1,450 @@
+/* ============================================================
+   MangaVerse v12 — MOBILE REDESIGN LAYER
+   Matches the shared reference: navy #0B131E surface, teal #00BCD4
+   accent, 3-zone sticky header (hamburger · centered logo ·
+   search/bell/avatar) and a 5-item bottom nav with an elevated
+   center Post button. Desktop (>720px) is untouched.
+   ============================================================ */
+
+:root {
+  --ref-bg:      #0b131e; /* main navy background          */
+  --ref-surface: #1e2732; /* card / pill surface           */
+  --ref-line:    #263340; /* hairline separators           */
+  --ref-teal:    #00bcd4; /* primary accent                */
+  --ref-teal-2:  #00e5ff; /* brighter teal for glows       */
+  --ref-txt:     #ffffff;
+  --ref-txt-dim: #a0a8b4;
+  --ref-badge:   #e5484d; /* notification badge red        */
+  --mhdr-h: 56px;         /* mobile header height          */
+}
+
+/* ----- everything below only applies on phones/tablets ----- */
+@media (max-width: 720px) {
+
+  /* ---------- global surface: match the reference navy ---------- */
+  body { background: var(--ref-bg); padding-bottom: calc(var(--bn-h) + env(safe-area-inset-bottom)); }
+  .bg-aurora { opacity: .5; }
+  .bg-grid   { display: none; }               /* cleaner flat mobile bg */
+
+  /* ============================================================
+     HEADER  →  hamburger | centered logo | search · bell · avatar
+     ============================================================ */
+  .nav {
+    background: var(--ref-bg);
+    -webkit-backdrop-filter: none; backdrop-filter: none;
+    border-bottom: 1px solid var(--ref-line);
+  }
+  /* Flex header: [burger] [brand — centered via auto margins] [search][bell][avatar] */
+  .nav-inner {
+    height: var(--mhdr-h);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 0 10px;
+    padding-top: env(safe-area-inset-top);
+    position: relative;
+  }
+
+  /* burger first (left) */
+  .nav-burger {
+    display: grid; place-items: center;
+    order: 0; width: 40px; height: 40px;
+    margin: 0; font-size: 1.35rem; color: var(--ref-txt);
+    border-radius: 10px; flex: 0 0 auto;
+  }
+  .nav-burger:active { background: rgba(255,255,255,.06); }
+
+  /* centered brand — absolutely centered so it stays put regardless of side widths */
+  .brand {
+    order: 1;
+    position: absolute; left: 50%; top: 50%;
+    transform: translate(-50%, -50%);
+    gap: 8px; font-size: 1.15rem;
+    pointer-events: auto;
+  }
+  .brand-text { display: inline; }            /* re-show logo text on mobile */
+  .brand-mark {
+    width: 30px; height: 30px; border-radius: 9px; font-size: .95rem;
+    background: var(--ref-teal); color: #06121a;
+    box-shadow: 0 4px 14px rgba(0,188,212,.45);
+  }
+  .brand .accent,
+  .brand-text {
+    background: none; -webkit-background-clip: initial; background-clip: initial;
+    color: var(--ref-teal);
+  }
+
+  /* the search box in the header row collapses to a round icon button.
+     margin-left:auto pushes the whole right-hand cluster (search+bell+avatar) to the edge */
+  .nav-search {
+    order: 2; display: flex !important;
+    flex: 0 0 auto; width: 38px; height: 38px; max-width: 38px;
+    margin-left: auto;
+    padding: 0; justify-content: center;
+    background: transparent; border: none; border-radius: 10px;
+    color: var(--ref-txt);
+  }
+  .nav-search input, .nav-search kbd { display: none; }
+  .nav-search [data-lucide] { width: 22px; height: 22px; }
+  .nav-search:active { background: rgba(255,255,255,.06); }
+
+  /* desktop link row + language tools hidden on mobile (live in drawer / bottom-nav) */
+  .nav-links { display: none; }
+  .nav-tools { display: none !important; }
+
+  /* right-hand action cluster: search · bell · avatar — inline flex, no stacking */
+  .nav-account { order: 3; flex: 0 0 auto; margin-left: 0; align-self: center; display: flex; align-items: center; }
+  .account { display: flex; align-items: center; gap: 4px; }
+
+  /* bell → clean icon button + red count badge like the reference */
+  .notif-bell {
+    width: 40px; height: 40px; border-radius: 10px; color: var(--ref-txt);
+  }
+  .notif-bell [data-lucide] { width: 23px; height: 23px; }
+  .notif-badge {
+    top: 3px; right: 3px; background: var(--ref-badge);
+    border: 2px solid var(--ref-bg); min-width: 17px; height: 17px; font-size: 9px;
+  }
+
+  /* avatar button shrinks to just the round avatar (name/chevron hidden) */
+  .account-btn {
+    padding: 0; background: none; border: none; gap: 0;
+  }
+  .account-btn .account-name,
+  .account-btn [data-lucide="chevron-down"] { display: none; }
+  .account-btn .avatar-img { width: 32px; height: 32px; border: 1px solid var(--ref-line); }
+  .account-menu { top: calc(100% + 10px); right: -4px; }
+
+  /* signed-out CTA stays compact */
+  .nav-account .btn-primary.btn-sm { padding: 7px 12px; }
+
+  /* (header right-cluster ordering handled by flex order + margin-left:auto above) */
+
+  /* ---------- mobile drawer (hamburger) polish ---------- */
+  .nav-mobile {
+    background: var(--ref-bg);
+    border-top: 1px solid var(--ref-line);
+    padding: 10px 12px calc(16px + env(safe-area-inset-bottom));
+    max-height: calc(100vh - var(--mhdr-h)); overflow-y: auto;
+  }
+  .nav-mobile a { color: var(--ref-txt-dim); border-radius: 12px; padding: 13px 14px; }
+  .nav-mobile a:active, .nav-mobile a:hover { background: var(--ref-surface); color: var(--ref-txt); }
+  .nav-mobile a.active { background: rgba(0,188,212,.14); color: var(--ref-teal); }
+
+  /* ============================================================
+     MAIN CONTAINER + HERO
+     ============================================================ */
+  .app { padding: 16px 14px calc(28px + var(--bn-h)); }
+
+  .hero { padding: 26px 0 18px; }
+  .hero-title { font-size: clamp(1.9rem, 8.5vw, 2.6rem); margin-bottom: 12px; }
+  .hero-sub { font-size: .98rem; margin-bottom: 20px; padding: 0 4px; }
+  .hero-kicker { margin-bottom: 16px; font-size: .8rem; }
+  .hero-cta { gap: 10px; flex-direction: column; align-items: stretch; }
+  .hero-cta .btn { width: 100%; justify-content: center; }
+  @media (min-width: 440px) {
+    .hero-cta { flex-direction: row; }
+    .hero-cta .btn { width: auto; flex: 1 1 0; }
+  }
+
+  /* section headers a touch tighter */
+  .section-head { margin-bottom: 14px; }
+  .section-head h2 { font-size: 1.18rem; }
+
+  /* ============================================================
+     MANGA GRID / CARDS — 2-up, rounded, subtle border like ref
+     ============================================================ */
+  .grid { grid-template-columns: repeat(2, 1fr); gap: 12px; }
+  @media (max-width: 360px) { .grid { gap: 10px; } }
+  .card {
+    background: var(--ref-surface);
+    border: 1px solid var(--ref-line);
+    border-radius: 14px;
+  }
+
+  /* ============================================================
+     BOTTOM NAV — 5 items, elevated center Post, teal active
+     (the Alerts item is folded away on the smallest layout so the
+      bar shows exactly Home · Search · Post · Chat · Profile like ref)
+     ============================================================ */
+  .bottom-nav {
+    height: var(--bn-h);
+    background: var(--ref-bg);
+    border-top: 1px solid var(--ref-line);
+    -webkit-backdrop-filter: none; backdrop-filter: none;
+    padding: 6px 2px calc(4px + env(safe-area-inset-bottom));
+  }
+  .bn-item { color: var(--ref-txt-dim); font-size: 10px; gap: 2px; padding: 0 1px; min-width: 0; }
+  .bn-item span:last-child { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .bn-item [data-lucide] { width: 22px; height: 22px; }
+  .bn-item.active { color: var(--ref-teal); }
+  .bn-post [data-lucide] {
+    width: 38px; height: 38px; padding: 8px; border-radius: 14px;
+    background: var(--ref-teal); color: #06121a; margin-top: -16px;
+    box-shadow: 0 6px 18px rgba(0,188,212,.5);
+  }
+  .bn-post span { margin-top: 1px; }
+  .bn-badge { background: var(--ref-badge); border: 2px solid var(--ref-bg); }
+
+  /* very small screens: shrink text a touch and drop the Post label so the
+     six touch targets stay comfortable and never collide */
+  @media (max-width: 380px) {
+    .bn-item { font-size: 9px; }
+    .bn-item [data-lucide] { width: 21px; height: 21px; }
+    .bn-post span { display: none; }
+  }
+
+  /* ============================================================
+     SOCIAL PAGES (feed / chat / profile / search / notifications)
+     tighten to full-bleed cards on the navy surface
+     ============================================================ */
+  .feed-page, .composer-page, .chat-inbox, .dm-page, .profile-page,
+  .search-page, .notif-page, .docs-page, .api-page, .admin-page, .settings-page {
+    max-width: 100%; margin: 0;
+  }
+
+  /* generic surfaces on mobile inherit the reference navy/slate */
+  .post-card, .glass, .surface-card, .settings-card, .admin-card,
+  .notif-item, .search-result, .chat-row {
+    background: var(--ref-surface) !important;
+    border-color: var(--ref-line) !important;
+  }
+
+  /* nav pills (Following / Trending / For You style) — if present */
+  .pill-tabs, .tab-row, .seg-tabs { gap: 10px; }
+  .pill-tabs .active, .tab-row .active, .seg-tabs .active {
+    background: var(--ref-teal); color: #06121a;
+  }
+
+  /* footer sits above the bottom nav, compact */
+  .footer { margin-bottom: var(--bn-h); }
+  .footer-inner { padding: 20px 14px; text-align: center; }
+  .footer-links { justify-content: center; flex-wrap: wrap; gap: 14px; }
+
+  /* prevent any horizontal overflow / overlap */
+  .app, .feed-page, .dm-page, .profile-page, .settings-page { overflow-x: hidden; }
+  img, video, canvas, svg { max-width: 100%; }
+}
+
+/* extra-small phones (≤380px) — nudge the header cluster spacing */
+@media (max-width: 380px) {
+  .nav-inner { gap: 4px; padding: 0 8px; }
+  .brand { font-size: 1.02rem; }
+  .brand-text { max-width: 96px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+}
+
+/* ============================================================
+   v13 ADDITIONS
+   1) reader controls + chapter selector on the navy/teal theme
+   2) slide-in left drawer + backdrop, pull-to-refresh
+   3) suggested-users row + Following/Trending/For You pill tabs
+   4) nav guards (bottom nav ONLY mobile, top links ONLY desktop)
+   5) distinct MangaBot bubble + BOT tag styling (all viewports)
+   ============================================================ */
+
+/* ---------- (4) hard guards: nav placement by viewport ---------- */
+/* Desktop: never show the mobile bottom bar or the burger drawer. */
+@media (min-width: 721px) {
+  .bottom-nav { display: none !important; }
+  .nav-mobile { display: none !important; }
+  .drawer-backdrop { display: none !important; }
+  .ptr-indicator { display: none !important; }
+}
+/* Mobile: the horizontal desktop link row never shows (drawer + bottom nav instead). */
+@media (max-width: 720px) {
+  .nav-links { display: none !important; }
+}
+
+/* ---------- (5) MangaBot bubble + BOT tag (all sizes) ---------- */
+.bubble-bot,
+.msg.bot .bubble,
+.dm-msg.bot .msg-bubble {
+  background: rgba(0,188,212,.12) !important;
+  border: 1px solid rgba(0,229,255,.35) !important;
+  color: #eafcff !important;
+  white-space: pre-wrap;
+}
+.bot-tag {
+  display: inline-block;
+  margin-left: 6px;
+  padding: 1px 6px;
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: .5px;
+  border-radius: 6px;
+  background: #00bcd4;
+  color: #06121a;
+  vertical-align: middle;
+}
+
+/* ============================================================
+   MOBILE-ONLY v13 (≤720px)
+   ============================================================ */
+@media (max-width: 720px) {
+
+  /* ---------- (1) READER controls / chapter selector ---------- */
+  .reader-nav {
+    background: var(--ref-surface);
+    border: 1px solid var(--ref-line);
+    border-radius: 14px;
+    padding: 10px;
+    gap: 8px;
+  }
+  .reader-nav.top {
+    background: rgba(11,19,30,.92);
+    -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px);
+    border-color: var(--ref-line);
+    top: calc(var(--mhdr-h) + 6px);
+  }
+  .reader-nav .btn {
+    background: var(--ref-surface);
+    border: 1px solid var(--ref-line);
+    color: var(--ref-txt);
+    padding: 9px 12px;
+    border-radius: 10px;
+    min-height: 40px;
+  }
+  .reader-nav .btn-primary,
+  .reader-nav .btn.btn-primary {
+    background: var(--ref-teal);
+    border-color: var(--ref-teal);
+    color: #06121a;
+  }
+  .reader-chapter-label { color: var(--ref-teal); font-weight: 700; }
+  .reader-chapter-select {
+    background: var(--ref-bg);
+    color: var(--ref-txt);
+    border: 1px solid var(--ref-line);
+    border-radius: 10px;
+    padding: 10px 12px;
+    font-size: .9rem;
+    min-height: 42px;
+  }
+  .reader-chapter-select:focus { border-color: var(--ref-teal); outline: none; }
+  .reader-progress .bar { background: var(--ref-teal); }
+  .reader-notice {
+    background: var(--ref-surface);
+    border: 1px solid var(--ref-line);
+    border-radius: 12px;
+    color: var(--ref-txt-dim);
+  }
+  .reader-notice-alt { border-color: rgba(0,188,212,.4); }
+  .reader-title, .reader-head { color: var(--ref-txt); }
+
+  /* ---------- (2a) slide-in LEFT drawer ---------- */
+  .nav-mobile {
+    position: fixed;
+    top: 0; left: 0; bottom: 0;
+    width: min(82vw, 320px);
+    max-height: 100vh; height: 100vh;
+    transform: translateX(-100%);
+    transition: transform .28s cubic-bezier(.22,.61,.36,1);
+    border-top: none;
+    border-right: 1px solid var(--ref-line);
+    box-shadow: 2px 0 30px rgba(0,0,0,.5);
+    padding: calc(14px + env(safe-area-inset-top)) 12px calc(16px + env(safe-area-inset-bottom));
+    z-index: 1200;
+    overflow-y: auto;
+  }
+  .nav-mobile.open { transform: translateX(0); }
+  /* little brand header at the top of the drawer */
+  .nav-mobile::before {
+    content: "MangaVerse";
+    display: block;
+    font-family: "Sora", sans-serif;
+    font-weight: 800;
+    font-size: 1.1rem;
+    color: var(--ref-teal);
+    padding: 4px 12px 12px;
+    border-bottom: 1px solid var(--ref-line);
+    margin-bottom: 8px;
+  }
+  .drawer-backdrop {
+    position: fixed; inset: 0;
+    background: rgba(4,8,14,.55);
+    -webkit-backdrop-filter: blur(2px); backdrop-filter: blur(2px);
+    opacity: 0; visibility: hidden;
+    transition: opacity .28s ease, visibility .28s ease;
+    z-index: 1150;
+  }
+  .drawer-backdrop.show { opacity: 1; visibility: visible; }
+  body.drawer-open { overflow: hidden; }
+
+  /* ---------- (2b) pull-to-refresh indicator ---------- */
+  .ptr-indicator {
+    position: fixed; top: calc(var(--mhdr-h) + env(safe-area-inset-top));
+    left: 50%;
+    transform: translateX(-50%) translateY(-60px);
+    width: 40px; height: 40px; border-radius: 50%;
+    display: grid; place-items: center;
+    background: var(--ref-surface);
+    border: 1px solid var(--ref-line);
+    color: var(--ref-teal);
+    box-shadow: 0 6px 20px rgba(0,0,0,.4);
+    opacity: 0; z-index: 1100;
+    transition: transform .18s ease, opacity .18s ease;
+  }
+  .ptr-indicator [data-lucide] { width: 20px; height: 20px; }
+  .ptr-indicator.ready { border-color: var(--ref-teal); }
+  .ptr-indicator.spinning .ptr-spinner { animation: ptr-spin .8s linear infinite; display: inline-flex; }
+  @keyframes ptr-spin { to { transform: rotate(360deg); } }
+
+  /* ---------- (3a) SUGGESTED USERS row ---------- */
+  .suggest-row { margin: 4px 0 14px; }
+  .suggest-scroll::-webkit-scrollbar { height: 0; }
+  .suggest-scroll {
+    display: flex; gap: 10px; overflow-x: auto;
+    padding: 2px 2px 6px; scrollbar-width: none;
+    scroll-snap-type: x proximity;
+  }
+  .suggest-card {
+    flex: 0 0 auto; width: 132px;
+    background: var(--ref-surface);
+    border: 1px solid var(--ref-line);
+    border-radius: 14px;
+    padding: 14px 10px 12px;
+    display: flex; flex-direction: column; align-items: center; gap: 4px;
+    text-align: center; scroll-snap-align: start;
+  }
+  .suggest-card .avatar-img { width: 52px; height: 52px; }
+  .suggest-name {
+    font-weight: 700; font-size: .86rem; color: var(--ref-txt);
+    max-width: 112px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  }
+  .suggest-handle {
+    font-size: .72rem; color: var(--ref-txt-dim);
+    max-width: 112px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  }
+  .suggest-follow { margin-top: 8px; width: 100%; padding: 7px 0; font-size: .8rem; }
+  .suggest-follow.following { background: var(--ref-surface); color: var(--ref-teal); border: 1px solid var(--ref-teal); }
+}
+
+/* ---------- (3b) FEED PILL TABS (all sizes; sticky on mobile) ---------- */
+.feed-tabs {
+  display: flex; gap: 8px;
+  margin: 6px 0 16px;
+}
+.feed-tabs .pill-tab {
+  flex: 1 1 0;
+  padding: 9px 8px;
+  border-radius: 999px;
+  border: 1px solid var(--ref-line, #263340);
+  background: var(--ref-surface, #1e2732);
+  color: var(--ref-txt-dim, #a0a8b4);
+  font-weight: 600; font-size: .9rem;
+  cursor: pointer; transition: background .15s, color .15s;
+}
+.feed-tabs .pill-tab:hover { color: #fff; }
+.feed-tabs .pill-tab.active {
+  background: var(--ref-teal, #00bcd4);
+  border-color: var(--ref-teal, #00bcd4);
+  color: #06121a;
+}
+@media (max-width: 720px) {
+  .feed-tabs {
+    position: sticky; top: calc(var(--mhdr-h) + 4px);
+    z-index: 30;
+    background: var(--ref-bg);
+    padding: 8px 0; margin: 0 0 12px;
+  }
+}
