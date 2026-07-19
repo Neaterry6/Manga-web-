@@ -861,6 +861,7 @@
         else if (/recommend|suggest|what should i read/.test(low)) cmd = "recommend";
         else if (/search|find|look for/.test(low)) { cmd = "search"; arg = t.replace(/.*?(search|find|look for)/i, "").trim(); }
         else if (/info|about|synopsis|summary/.test(low)) { cmd = "info"; arg = t.replace(/.*?(info|about|synopsis|summary)( on| for| of)?/i, "").trim(); }
+        else if (/imagine|generate|draw|create|make/.test(low)) { cmd = "imagine"; arg = t.replace(/.*?(imagine|generate|draw|create|make)( me| a| an| the| of)?/i, "").trim(); }
         else { cmd = "help"; }
       }
       const MS = window.MangaSource;
@@ -873,7 +874,7 @@
       })).filter(r => r.id);
       try {
         if (cmd === "help" || cmd === "commands" || cmd === "start") {
-          return { text: "🤖 MangaBot commands:\n/recommend — a few picks for you\n/trending — what's hot right now\n/search <title> — find manga\n/info <title> — synopsis & details\n/help — this message\n(You can also just say \"recommend something\" or \"@mangabot search dragon\".)", refs: [] };
+          return { text: "🤖 MangaBot commands:\n/recommend — a few picks for you\n/trending — what's hot right now\n/search <title> — find manga\n/info <title> — synopsis & details\n/imagine <prompt> — generate an image\n/help — this message\n(You can also just say \"recommend something\" or \"@mangabot search dragon\".)", refs: [] };
         }
         if (cmd === "trending" || cmd === "popular") {
           const list = MS ? await MS.list({ limit: 5 }) : [];
@@ -892,6 +893,16 @@
           const list = MS ? await MS.search(arg) : [];
           if (!list.length) return { text: "🤖 No matches for \"" + arg + "\". Try a different title.", refs: [] };
           return { text: "🔎 Results for \"" + arg + "\":\n" + list.slice(0, 5).map(line).join("\n"), refs: refsOf(list) };
+        }
+        if (cmd === "imagine" || cmd === "generate" || cmd === "draw") {
+          if (!arg) return { text: "🤖 What should I draw? Try: /imagine epic dragon fighting samurai in manga style", refs: [] };
+          try {
+            if (typeof agnesGenerate === "function") {
+              var imgUrl = await agnesGenerate(arg);
+              if (imgUrl) return { text: "🎨 Here's what I generated for:\n\"" + arg + "\"", refs: [], media: { type: "image", url: imgUrl } };
+            }
+            return { text: "🤖 Image generation is not available right now. Try /search or /recommend instead.", refs: [] };
+          } catch (e) { return { text: "🤖 Image generation failed. Try a different prompt.", refs: [] }; }
         }
         if (cmd === "info" || cmd === "about" || cmd === "synopsis") {
           if (!arg) return { text: "🤖 Which title? Try: /info solo leveling", refs: [] };
