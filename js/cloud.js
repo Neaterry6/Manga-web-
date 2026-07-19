@@ -27,6 +27,23 @@
 
   const URL_KEY = "mv_supabase_url";
   const KEY_KEY = "mv_supabase_key";
+  
+  // Pre-configured defaults (overridable in Settings)
+  const DEFAULT_URL = "https://uwuzcrivtmftachqgezq.supabase.co";
+  const DEFAULT_KEY = "sb_publishable_6az-XWNlGaeN104zWDwYpg_UQeTt0NE";
+  
+  // Auto-configure on first load if not already set
+  function ensureConfig() {
+    try {
+      if (!localStorage.getItem(URL_KEY) && DEFAULT_URL) {
+        localStorage.setItem(URL_KEY, DEFAULT_URL);
+      }
+      if (!localStorage.getItem(KEY_KEY) && DEFAULT_KEY) {
+        localStorage.setItem(KEY_KEY, DEFAULT_KEY);
+      }
+    } catch (e) {}
+  }
+  ensureConfig();
   const SDK = "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js";
 
   function cfgUrl() { try { return (localStorage.getItem(URL_KEY) || "").trim().replace(/\/+$/, ""); } catch (e) { return ""; } }

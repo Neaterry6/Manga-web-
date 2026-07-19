@@ -48,6 +48,53 @@
   // Render icons + translate in one shot after injecting markup.
   function afterRender(root) { icons(); translateUI(root); }
 
+  /* ---------------- Image compressor (client-side) ---------------- */
+  // Compress an image file (avatar, post image) to a small base64 data URL.
+  // maxW/maxH: max dimensions, quality: 0-1, stripMetadata: remove EXIF
+  function compressImage(fileOrBlob, { maxW = 400, maxH = 400, quality = 0.7, format = "webp" } = {}) {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = function (e) {
+        const img = new Image();
+        img.onload = function () {
+          let w = img.width, h = img.height;
+          if (w > maxW) { h = h * maxW / w; w = maxW; }
+          if (h > maxH) { w = w * maxH / h; h = maxH; }
+          const canvas = document.createElement("canvas");
+          canvas.width = w; canvas.height = h;
+          const ctx = canvas.getContext("2d");
+          ctx.clearRect(0, 0, w, h);
+          // Strip EXIF orientation by drawing full then scaling
+          ctx.drawImage(img, 0, 0, w, h);
+          canvas.toBlob(function (blob) {
+            if (!blob) { reject(new Error("Compression failed")); return; }
+            // Also return the data URL for direct <img> use
+            const fr2 = new FileReader();
+            fr2.onload = function (ev) { resolve({ blob, dataUrl: ev.target.result, width: w, height: h }); };
+            fr2.readAsDataURL(blob);
+          }, "image/" + format, quality);
+        };
+        img.onerror = reject;
+        img.src = e.target.result;
+      };
+      reader.onerror = reject;
+      reader.readAsDataURL(fileOrBlob);
+    });
+  }
+  // Expose globally
+  window.compressImage = compressImage;
+
+  // Avatar upload helper — compress then save to localStorage
+  async function uploadAvatar(file) {
+    try {
+      const result = await compressImage(file, { maxW: 256, maxH: 256, quality: 0.6 });
+      const u = Auth.current();
+      if (u) { u.avatar = result.dataUrl; Auth.update(u); }
+      return result.dataUrl;
+    } catch (e) { throw new Error("Couldn't process image: " + e.message); }
+  }
+  window.uploadAvatar = uploadAvatar;
+
   /* ============================================================
      BACKGROUND PUSH NOTIFICATIONS (Notification API)
      Fires a real browser notification for new DM/group messages and

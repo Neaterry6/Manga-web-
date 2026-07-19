@@ -1,0 +1,32 @@
+{
+  "host": "manga-web-production-788f.up.railway.app",
+  "fallbackUrl": "https://manga-web-production-788f.up.railway.app",
+  "appName": "MangaVerse",
+  "shortName": "MangaVerse",
+  "launcherName": "MangaVerse",
+  "navigation": "never",
+  "appVersion": "1.0.0",
+  "appVersionCode": 1,
+  "backgroundColor": "#0b131e",
+  "themeColor": "#0b131e",
+  "enableNotifications": true,
+  "display": "standalone",
+  "orientation": "any",
+  "packageId": "com.mangaverse.app",
+  "signing": {
+    "keystore": null,
+    "alias": null,
+    "password": null
+  },
+  "appVersionName": "1.0",
+  "iconUrl": "https://manga-web-production-788f.up.railway.app/manifest.json",
+  "maskableIconUrl": "https://manga-web-production-788f.up.railway.app/manifest.json",
+  "monochromeIconUrl": null,
+  "splashScreenFadeOutDuration": 300,
+  "features": {},
+  "enableSiteSettingsShortcut": true,
+  "isChromeOSOnly": false,
+  "isMetaQuest": false,
+  "fullScopeUrl": "https://manga-web-production-788f.up.railway.app",
+  "location": "https://manga-web-production-788f.up.railway.app"
+}

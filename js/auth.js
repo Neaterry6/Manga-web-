@@ -14,7 +14,7 @@
   // Any account created/logged-in with THIS email is automatically an app
   // admin (verified too), no matter how it was created (localStorage or
   // Supabase Auth). The pre-seeded admin uses the same email.
-  const ADMIN_EMAIL = "akewusholaabdulbakri101@gmail.com";
+    const ADMIN_EMAIL = "akewusholaabdulbakri101@gmail.com";
   function isAdminEmail(e) { return (e || "").trim().toLowerCase() === ADMIN_EMAIL; }
 
   function read(key, fallback) {
