@@ -25,6 +25,24 @@
 
   // MangaBot — a fixed assistant "user" auto-added to every group chat.
   const BOT_ID = "bot_mangabot";
+  // Agnes AI config for image generation (MangaBot)
+  const AGNES_KEY = "sk-xXnSB786FgMbtOCXG79ykGyc8rAoLn5UKq32v6xZTF4ebjQi";
+  const AGNES_URL = "https://apihub.agnes-ai.com/v1/images/generations";
+  // Generate image via Agnes AI
+  async function agnesGenerate(prompt) {
+    try {
+      const r = await fetch(AGNES_URL, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "Authorization": "Bearer " + AGNES_KEY },
+        body: JSON.stringify({ model: "agnes-image-2.0-flash", prompt: prompt, size: "1024x1024" })
+      });
+      const d = await r.json();
+      if (d.data && d.data.length && d.data[0].url) return d.data[0].url;
+      if (d.data && d.data.length && d.data[0].b64_json) return "data:image/png;base64," + d.data[0].b64_json;
+      return null;
+    } catch (e) { console.warn("Agnes AI failed:", e); return null; }
+  }
+
   // Inline-SVG avatar (data URI) so it can never 404 — a friendly cyan robot.
   const BOT_AVATAR = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='22' fill='%230b1220'/%3E%3Crect x='26' y='30' width='48' height='38' rx='11' fill='%2300e5ff'/%3E%3Ccircle cx='40' cy='49' r='6' fill='%230b1220'/%3E%3Ccircle cx='60' cy='49' r='6' fill='%230b1220'/%3E%3Crect x='44' y='60' width='12' height='4' rx='2' fill='%230b1220'/%3E%3Cline x1='50' y1='20' x2='50' y2='30' stroke='%2300e5ff' stroke-width='3'/%3E%3Ccircle cx='50' cy='18' r='4' fill='%2300ffa3'/%3E%3C/svg%3E";
 
@@ -76,8 +94,8 @@
     opts = opts || {};
     if (!file) return null;
     if (file.type.startsWith("image/")) {
-      const url = await compressImage(file, opts.maxEdge || 1000, opts.quality || 0.82);
-      return { type: "image", url };
+      var imgResult = await compressImage(file, { maxW: opts.maxEdge || 800, maxH: opts.maxEdge || 800, quality: opts.quality || 0.7 });
+      return { type: "image", url: imgResult.dataUrl || imgResult };
     }
     if (file.type.startsWith("video/")) {
       if (file.size > 6 * 1024 * 1024)
