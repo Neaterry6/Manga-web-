@@ -859,6 +859,23 @@
     if ($("#heroSignup")) $("#heroSignup").addEventListener("click", () => openAuth("signup"));
     icons();
 
+    // Show sample data instantly for immediate render, then fetch live
+    (function showInstantGrid() {
+      var cached = HOME_CACHE || null;
+      if (!cached) {
+        try { var ls = sessionStorage.getItem('mv_home_cache'); if (ls) cached = JSON.parse(ls); } catch(e) {}
+      }
+      if (cached && cached.length) {
+        $("#popularGrid").innerHTML = '<div class="grid">' + cached.slice(0, 18).map(mangaCard).join("") + '</div>';
+        afterRender($("#popularGrid"));
+        return;
+      }
+      var fb = window.MangaData.sampleFor("sfw");
+      if (fb && fb.length) {
+        $("#popularGrid").innerHTML = '<div class="grid">' + fb.slice(0, 18).map(mangaCard).join("") + '</div>';
+        afterRender($("#popularGrid"));
+      }
+    })();
     try {
       const items = HOME_CACHE || await window.MangaSource.list({ limit: 18 });
           // Fetch Trending from AniList
@@ -878,7 +895,7 @@
 
     // Only cache LIVE results — if we got the sample fallback, leave the
       // cache empty so a later visit / retry can still reach live data.
-      if (window.MangaSource.mode() === "live") HOME_CACHE = items;
+      if (window.MangaSource.mode() === "live") { HOME_CACHE = items; try { sessionStorage.setItem('mv_home_cache', JSON.stringify(items.slice(0, 50))); } catch(e) {} }
       $("#sourceBannerSlot").innerHTML = sourceBanner();
       $("#popularGrid").innerHTML = `<div class="grid">${items.map(mangaCard).join("")}</div>`;
       afterRender($("#popularGrid"));
