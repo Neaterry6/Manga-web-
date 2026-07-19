@@ -98,6 +98,27 @@
     return fetch(url, { signal: ctrl.signal }).finally(() => clearTimeout(t));
   }
 
+  // Simple in-memory + localStorage cache for API responses
+  const apiCache = new Map();
+  const CACHE_TTL = 5 * 60 * 1000; // 5 minutes
+  function cacheKey(url) { return "mv_api_" + btoa(url).slice(0, 120); }
+  function getCached(target) {
+    try {
+      const key = cacheKey(target);
+      const raw = sessionStorage.getItem(key);
+      if (raw) { const d = JSON.parse(raw); if (Date.now() - d.ts < CACHE_TTL) return d.data; }
+    } catch (e) {}
+    if (apiCache.has(target)) { const d = apiCache.get(target); if (Date.now() - d.ts < CACHE_TTL) return d.data; }
+    return null;
+  }
+  function setCached(target, data) {
+    try {
+      const key = cacheKey(target);
+      sessionStorage.setItem(key, JSON.stringify({ ts: Date.now(), data }));
+    } catch (e) {}
+    apiCache.set(target, { ts: Date.now(), data });
+  }
+
   // Fetch `target` through the proxy chain until `validate(json)` passes.
   // `passes` retries the whole chain (public proxies fail on cold start).
   async function fetchJSON(target, validate, passes) {
@@ -105,13 +126,16 @@
     const tries = passes || 2;
     let lastErr = null;
     const PROXIES = proxyChain();
+    // Check cache first
+    const cached = getCached(target);
+    if (cached && ok(cached)) return cached;
     for (let p = 0; p < tries; p++) {
       for (const px of PROXIES) {
         try {
           const r = await timedFetch(px.wrap(target));
           if (!r.ok) { lastErr = new Error("HTTP " + r.status); continue; }
           const data = JSON.parse(px.unwrap(await r.text()));
-          if (ok(data)) return data;
+          if (ok(data)) { setCached(target, data); return data; }
           lastErr = new Error("bad payload");
         } catch (e) { lastErr = e; }
       }
