@@ -334,7 +334,13 @@ create trigger on_auth_user_created
         return () => { try { data.subscription.unsubscribe(); } catch (e) {} };
       } catch (e) { return () => {}; }
     },
-    // Upsert a profile row keyed by the auth user id (called after auth login).
+
+    // Sign in with OAuth provider (Google, GitHub, etc.)
+    async authWithOAuth(provider) {
+      if (!this.hasAuth()) throw new Error("Supabase not connected.");
+      const { error } = await client.auth.signInWithOAuth({ provider });
+      if (error) throw error;
+    },    // Upsert a profile row keyed by the auth user id (called after auth login).
     async syncAuthProfile(u, authId) {
       if (!ready || !u) return;
       try {

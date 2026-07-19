@@ -201,6 +201,30 @@
     finally { if (btn) btn.disabled = false; }
   });
 
+  // OAuth login buttons (show when Supabase Auth is configured)
+  function refreshOAuth() {
+    const hasCloud = window.Cloud && window.Cloud.hasAuth && window.Cloud.hasAuth();
+    const div = document.getElementById("oauthDivider");
+    const btns = document.getElementById("oauthBtns");
+    if (hasCloud && div && btns) { div.style.display = "flex"; btns.style.display = "flex"; }
+    else if (div && btns) { div.style.display = "none"; btns.style.display = "none"; }
+  }
+  const _origOA = openAuth;
+  openAuth = function(t) {
+    _origOA(t);
+    setTimeout(refreshOAuth, 100);
+  };
+  document.addEventListener("click", function(e) {
+    var btn = e.target.closest(".oauth-btn");
+    if (!btn || !window.Cloud) return;
+    var provider = btn.dataset.provider;
+    btn.disabled = true; btn.textContent = "Redirecting...";
+    window.Cloud.authWithOAuth(provider).catch(function(err) {
+      btn.disabled = false;
+      toast(err.message || "OAuth failed.", "error");
+    });
+  });
+
   /* ---------------- Nav account area ---------------- */
   function renderAccount() {
     const acc = document.getElementById("navAccount");
@@ -439,11 +463,66 @@
 
   /* ---------------- Global search ---------------- */
   const globalSearch = document.getElementById("globalSearch");
+  let searchTimer = null;
+  let searchSuggestBox = null;
+
+  // Create suggestions dropdown
+  function ensureSuggestBox() {
+    if (!searchSuggestBox) {
+      searchSuggestBox = document.createElement("div");
+      searchSuggestBox.id = "searchSuggestions";
+      searchSuggestBox.className = "search-suggestions";
+      document.getElementById("navSearch").appendChild(searchSuggestBox);
+    }
+    return searchSuggestBox;
+  }
+
+  // Fetch search suggestions from MangaDex
+  async function fetchSuggestions(q) {
+    if (q.length < 2) { const b = document.getElementById("searchSuggestions"); if (b) b.classList.remove("show"); return; }
+    try {
+      const results = await window.MangaSource.search(q, { limit: 5 });
+      const box = ensureSuggestBox();
+      if (results.length) {
+        box.innerHTML = results.slice(0, 5).map(r => 
+          `<a class="suggest-item" href="#/manga/${encodeURIComponent(r.id)}" data-link>
+            <img src="${esc(r.cover)}" alt="" onerror="this.style.display='none'" />
+            <span>${esc(r.title)}</span>
+          </a>`
+        ).join("");
+        box.classList.add("show");
+        if (window.lucide) window.lucide.createIcons();
+      } else {
+        box.classList.remove("show");
+      }
+    } catch (e) { const b = document.getElementById("searchSuggestions"); if (b) b.classList.remove("show"); }
+  }
+
+  globalSearch.addEventListener("input", () => {
+    const q = globalSearch.value.trim();
+    clearTimeout(searchTimer);
+    if (q.length >= 2) searchTimer = setTimeout(() => fetchSuggestions(q), 250);
+    else { const b = document.getElementById("searchSuggestions"); if (b) b.classList.remove("show"); }
+  });
+
   globalSearch.addEventListener("keydown", e => {
     if (e.key === "Enter") {
       const q = globalSearch.value.trim();
+      const b = document.getElementById("searchSuggestions");
+      if (b) b.classList.remove("show");
       location.hash = q ? "#/library?q=" + encodeURIComponent(q) : "#/library";
     }
+    if (e.key === "Escape") {
+      const b = document.getElementById("searchSuggestions");
+      if (b) b.classList.remove("show");
+      globalSearch.blur();
+    }
+  });
+
+  // Close suggestions on click outside
+  document.addEventListener("click", e => {
+    const b = document.getElementById("searchSuggestions");
+    if (b && !e.target.closest("#navSearch")) b.classList.remove("show");
   });
   document.addEventListener("keydown", e => {
     if (e.key === "/" && document.activeElement !== globalSearch && !/input|textarea/i.test(document.activeElement.tagName)) {
@@ -675,6 +754,13 @@
         <div id="popularGrid">${skeletonGrid(12)}</div>
       </section>
 
+      <section class="row-section" id="trendingSection">
+        <div class="section-head">
+          <h2><i data-lucide="trending-up"></i> <span data-tr>Trending</span></h2>
+        </div>
+        <div class="hscroll" id="trendingRow">${skeletonRow(8)}</div>
+      </section>
+
       <section class="row-section" id="mangaPlusSection">
         <div class="section-head">
           <h2><i data-lucide="zap"></i> <span data-tr>MangaPlus / Shonen Jump</span></h2>
@@ -688,7 +774,22 @@
 
     try {
       const items = HOME_CACHE || await window.MangaSource.list({ limit: 18 });
-      // Only cache LIVE results — if we got the sample fallback, leave the
+          // Fetch Trending from AniList
+    (async () => {
+      try {
+        const items = await window.MangaSource.trendingShelf({ limit: 8 });
+        if (items.length) {
+          $("#trendingRow").innerHTML = items.map(shelfCard).join("");
+          afterRender($("#trendingRow"));
+          return;
+        }
+      } catch (e) {}
+      const fb = window.MangaData.sampleFor("sfw");
+      $("#trendingRow").innerHTML = fb.slice(0, 8).map(shelfCard).join("");
+      afterRender($("#trendingRow"));
+    })();
+
+    // Only cache LIVE results — if we got the sample fallback, leave the
       // cache empty so a later visit / retry can still reach live data.
       if (window.MangaSource.mode() === "live") HOME_CACHE = items;
       $("#sourceBannerSlot").innerHTML = sourceBanner();
@@ -884,6 +985,8 @@
     try { m = await window.MangaSource.detail(id); } catch (e) { m = null; }
     if (!m) { app.innerHTML = `<div class="page"><p class="empty">Manga not found. <a href="#/library" data-link>Back to library</a></p></div>`; return; }
     if (!m.chapters) { try { m.chapters = await window.MangaSource.chapters(id); } catch (e) { m.chapters = []; } }
+    // Enrich with AniList metadata for richer descriptions, tags, popularity
+    try { m = await window.MangaSource.enrich(m); } catch (e) {}
 
     const bookmarked = Auth.isBookmarked(m.id);
     const lastRead = Auth.lastReadFor(m.id);
@@ -908,6 +1011,8 @@
             <div class="detail-actions">
               ${chapters.length ? `<a class="btn btn-primary" href="#/read/${encodeURIComponent(m.id)}/${encodeURIComponent((lastRead && chapters.find(c=>c.id===lastRead.chapterId) ? lastRead.chapterId : chapters[0].id))}" data-link><i data-lucide="book-open"></i> ${lastRead ? "Continue Ch. " + esc(lastRead.chapterNumber) : "Start Reading"}</a>` : ""}
               <button class="btn btn-ghost ${bookmarked ? "active" : ""}" id="bmBtn"><i data-lucide="bookmark"></i> <span>${bookmarked ? "Bookmarked" : "Bookmark"}</span></button>
+              <button class="btn btn-ghost btn-sm btn-random" id="detailRandomBtn" title="Random manga"><i data-lucide="shuffle"></i></button>
+              <button class="btn btn-ghost btn-sm btn-share" id="detailShareBtn" title="Share"><i data-lucide="share-2"></i></button>
             </div>
           </div>
         </div>
@@ -993,21 +1098,131 @@
         </select>
       </div>`;
 
+        const __rs = (() => { try { return JSON.parse(localStorage.getItem('mv_reader_settings') || '{}'); } catch(e) { return {}; } })();
+    const defBg = __rs.bg || 'dark';
+    const defBright = __rs.brightness || 100;
+
     app.innerHTML = `
-      <div class="reader">
+      <div class="reader" id="readerRoot" data-bg="${esc(defBg)}" style="filter: brightness(${defBright}%)">
         <div class="reader-head">
           <div class="reader-title">
             <a href="#/manga/${encodeURIComponent(m.id)}" data-link>${esc(m.title)}</a>
             <span class="muted">— ${esc(chapter.title)}</span>
           </div>
+          <button class="btn btn-ghost btn-sm reader-settings-btn" id="readerSettingsBtn" title="Reader settings"><i data-lucide="settings"></i></button>
+        </div>
+        <div class="reader-settings-panel" id="readerSettingsPanel" style="display:none">
+          <div class="rs-row">
+            <label>Brightness</label>
+            <input type="range" id="rsBrightness" min="30" max="150" value="${esc(defBright)}" />
+            <span class="rs-val" id="rsBrightnessVal">${defBright}%</span>
+          </div>
+          <div class="rs-row">
+            <label>Theme</label>
+            <div class="rs-themes">
+              <button class="rs-theme ${defBg === 'dark' ? 'active' : ''}" data-bg="dark" style="background:#0b131e;color:#fff">Dark</button>
+              <button class="rs-theme ${defBg === 'sepia' ? 'active' : ''}" data-bg="sepia" style="background:#fbf3d9;color:#3b2f1a">Sepia</button>
+              <button class="rs-theme ${defBg === 'light' ? 'active' : ''}" data-bg="light" style="background:#f5f5f5;color:#222">Light</button>
+            </div>
+          </div>
+          <div class="rs-row">
+            <label>Mode</label>
+            <div class="rs-modes">
+              <button class="rs-mode ${(__rs.mode||'scroll')==='scroll'?'active':''}" data-mode="scroll">Scroll</button>
+              <button class="rs-mode ${__rs.mode==='page'?'active':''}" data-mode="page">Page</button>
+            </div>
+          </div>
+          <div class="rs-row">
+            <label>Layout</label>
+            <div class="rs-modes">
+              <button class="rs-mode ${(__rs.layout||'portrait')==='portrait'?'active':''}" data-layout="portrait">Portrait</button>
+              <button class="rs-mode ${__rs.layout==='landscape'?'active':''}" data-layout="landscape">Landscape</button>
+            </div>
+          </div>
+          <div class="rs-row">
+            <label>Turn Page</label>
+            <div class="rs-modes">
+              <button class="rs-mode ${__rs.tapMode==='off'?'active':''}" data-tap="off">Off</button>
+              <button class="rs-mode ${(__rs.tapMode||'chapter')==='chapter'?'active':''}" data-tap="chapter">Chapters</button>
+            </div>
+          </div>
+          <div class="rs-row">
+            <label>Direction</label>
+            <div class="rs-modes">
+              <button class="rs-mode ${(__rs.direction||'ltr')==='ltr'?'active':''}" data-dir="ltr">LTR</button>
+              <button class="rs-mode ${__rs.direction==='rtl'?'active':''}" data-dir="rtl">RTL</button>
+            </div>
+          </div>
+          <div class="rs-row">
+            <label>Auto Nav</label>
+            <div class="rs-modes">
+              <button class="rs-mode ${(__rs.autoHide||'on')==='on'?'active':''}" data-autohide="on">Auto</button>
+              <button class="rs-mode ${__rs.autoHide==='off'?'active':''}" data-autohide="off">Always</button>
+            </div>
+          </div>
         </div>
         ${navBar("top")}
-        <div class="reader-pages" id="readerPages">
+        <div class="reader-pages" id="readerPages" data-layout="${esc(defBg === "landscape" ? "landscape" : (__rs.layout || "portrait"))}" data-dir="${esc(__rs.direction || "ltr")}" data-autohide="${esc(__rs.autoHide || "on")}">
           <div class="reader-loading"><i data-lucide="loader"></i> Loading pages… <span class="muted">(finding the best readable source)</span></div>
         </div>
         ${navBar("bottom")}
       </div>
       <div class="reader-progress" id="readerProgress"><div class="bar" id="readerBar"></div></div>`;
+
+    // Reader settings panel logic
+    setTimeout(() => {
+      const panel = document.getElementById('readerSettingsPanel');
+      const btn = document.getElementById('readerSettingsBtn');
+      if (btn) btn.addEventListener('click', () => { if (panel) panel.style.display = panel.style.display === 'none' ? 'block' : 'none'; });
+
+      const root = document.getElementById('readerRoot');
+      const brightness = document.getElementById('rsBrightness');
+      const brightVal = document.getElementById('rsBrightnessVal');
+      if (brightness) brightness.addEventListener('input', () => {
+        const v = brightness.value;
+        if (brightVal) brightVal.textContent = v + '%';
+        if (root) root.style.filter = 'brightness(' + v + '%)';
+        const s = JSON.parse(localStorage.getItem('mv_reader_settings') || '{}');
+        s.brightness = parseInt(v);
+        localStorage.setItem('mv_reader_settings', JSON.stringify(s));
+      });
+
+      document.querySelectorAll('.rs-theme').forEach(b => b.addEventListener('click', () => {
+        document.querySelectorAll('.rs-theme').forEach(x => x.classList.remove('active'));
+        b.classList.add('active');
+        const bg = b.dataset.bg;
+        if (root) root.dataset.bg = bg;
+        const s = JSON.parse(localStorage.getItem('mv_reader_settings') || '{}');
+        s.bg = bg;
+        localStorage.setItem('mv_reader_settings', JSON.stringify(s));
+      }));
+
+      document.querySelectorAll('.rs-mode').forEach(b => b.addEventListener('click', () => {
+        document.querySelectorAll('.rs-mode').forEach(x => x.classList.remove('active'));
+        b.classList.add('active');
+        const s = JSON.parse(localStorage.getItem('mv_reader_settings') || '{}');
+        if (b.dataset.mode) s.mode = b.dataset.mode;
+        if (b.dataset.layout) {
+          s.layout = b.dataset.layout;
+          const pages = document.getElementById('readerPages');
+          if (pages) pages.dataset.layout = s.layout;
+        }
+        if (b.dataset.tap) s.tapMode = b.dataset.tap;
+        if (b.dataset.dir) {
+          s.direction = b.dataset.dir;
+          const pages = document.getElementById('readerPages');
+          if (pages) pages.dataset.dir = s.direction;
+        }
+        if (b.dataset.autohide) {
+          s.autoHide = b.dataset.autohide;
+          // Apply auto-hide immediately
+          const topNav = document.querySelector('.reader-nav.top');
+          if (topNav) topNav.dataset.autohide = s.autoHide;
+        }
+        localStorage.setItem('mv_reader_settings', JSON.stringify(s));
+      }));
+    }, 100);
+
     icons();
 
     $$("[id^=chapterSelect]").forEach(sel => sel.addEventListener("change", e => {
@@ -1132,6 +1347,31 @@
     };
     window.addEventListener("scroll", onScroll, { passive: true });
     onScroll();
+
+    // Auto-hide nav on scroll
+    let lastScrollY = window.scrollY;
+    const onScrollDir = () => {
+      const topNav = document.querySelector('.reader-nav.top');
+      if (!topNav || topNav.dataset.autohide === 'off') return;
+      const sy = window.scrollY;
+      if (sy > lastScrollY && sy > 80) topNav.classList.add('nav-hidden');
+      else if (sy < lastScrollY) topNav.classList.remove('nav-hidden');
+      lastScrollY = sy;
+    };
+    window.addEventListener("scroll", onScrollDir, { passive: true });
+
+    // Tap zones for chapter navigation
+    if (window.__rs_tap !== false) {
+      const zones = document.createElement("div");
+      zones.className = "reader-tap-zones";
+      zones.innerHTML = '<div class="tap-zone tap-left" id="tapLeft"></div><div class="tap-zone tap-right" id="tapRight"></div>';
+      document.querySelector(".reader").appendChild(zones);
+      const rs = (() => { try { return JSON.parse(localStorage.getItem('mv_reader_settings') || '{}'); } catch(e) { return {}; } })();
+      if (rs.tapMode !== 'off') {
+        document.getElementById("tapLeft").addEventListener("click", () => { if (prev) location.hash = '#/read/${m.id}/${prev.id}'; });
+        document.getElementById("tapRight").addEventListener("click", () => { if (next) location.hash = '#/read/${m.id}/${next.id}'; });
+      }
+    }
 
     // keyboard nav
     const keyNav = (e) => {
@@ -1694,6 +1934,22 @@
       } catch (ex) {
         err.textContent = ex.message || "Couldn't publish. Try again.";
       }
+    });
+    // Random manga
+    if ($("#detailRandomBtn")) $("#detailRandomBtn").addEventListener("click", async () => {
+      try {
+        const items = await window.MangaSource.list({ limit: 50 });
+        if (items.length) {
+          const pick = items[Math.floor(Math.random() * items.length)];
+          location.hash = "#/manga/" + encodeURIComponent(pick.id);
+        }
+      } catch (e) { toast("Couldn't load random manga.", "error"); }
+    });
+    // Share
+    if ($("#detailShareBtn")) $("#detailShareBtn").addEventListener("click", () => {
+      const url = window.location.origin + window.location.pathname + "#/manga/" + encodeURIComponent(m.id);
+      if (navigator.share) { navigator.share({ title: m.title, url }).catch(() => {}); }
+      else { navigator.clipboard.writeText(url).then(() => toast("Link copied!", "success")).catch(() => {}); }
     });
   }
 

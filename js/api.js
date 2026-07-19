@@ -41,7 +41,7 @@
   /* ============================================================
      Shared networking — resilient JSON proxy chain
      ============================================================ */
-  const TIMEOUT = 13000;
+  const TIMEOUT = 14000;
   const RAW = (t) => t;
 
   /* ---- Self-hosted Cloudflare Worker proxy (optional, PRIMARY when set) ----
@@ -70,21 +70,19 @@
     unwrap: RAW,
   });
 
-  // Verified in-browser: corssh reaches MangaDex reliably; allorigins
-  // is a flaky-but-useful backup. direct is free when an API sends CORS.
-  // NOTE: send NO custom headers — an "Accept" header makes the request
-  // non-simple and triggers a CORS preflight that public proxies reject.
-  // Ordered by in-browser reliability (a real Origin header from the browser
-  // makes these behave much better than a server-side curl). corsproxy.io is
-  // the strongest default; allorigins is a solid backup; direct works when the
-  // API itself sends CORS. A user-deployed Worker (above) still takes priority.
+  // MangaDex API natively sends permissive CORS headers, so `direct`
+  // (no proxy) is tried FIRST — fastest path when it works. Public
+  // proxies are used as fallbacks when Cloudflare or rate-limiting blocks
+  // the direct call. NOTE: send NO custom headers — an "Accept" header
+  // makes the request non-simple and triggers a CORS preflight that public
+  // proxies reject. A user-deployed Cloudflare Worker (above) still takes
+  // priority over everything.
   const PUBLIC_PROXIES = [
+    { name: "direct",         wrap: (u) => u, unwrap: RAW },
     { name: "corsproxy",      wrap: (u) => "https://corsproxy.io/?url=" + encodeURIComponent(u), unwrap: RAW },
     { name: "allorigins-raw", wrap: (u) => "https://api.allorigins.win/raw?url=" + encodeURIComponent(u), unwrap: RAW },
-    { name: "corssh",         wrap: (u) => "https://proxy.cors.sh/" + u, unwrap: RAW },
     { name: "allorigins-get", wrap: (u) => "https://api.allorigins.win/get?url=" + encodeURIComponent(u),
-      unwrap: (t) => { try { return JSON.parse(t).contents; } catch (e) { return t; } } },
-    { name: "direct",         wrap: (u) => u, unwrap: RAW }
+      unwrap: (t) => { try { return JSON.parse(t).contents; } catch (e) { return t; } } }
   ];
   // Build the active chain: self-hosted Worker first (if set), then the
   // public fallbacks — so a configured Worker is preferred but the site is
@@ -651,8 +649,160 @@
     };
   })();
 
+  /* ============================================================
+     PROVIDER 5 — AniList (metadata enrichment)
+     ------------------------------------------------------------
+     AniList's GraphQL API is CORS-friendly and fast. We use it to
+     ENRICH manga cards with richer descriptions, popularity scores,
+     ranked titles and recommendations — layered on top of MangaDex
+     data so the app shows *more* useful info without replacing the
+     primary data source.
+     ============================================================ */
+  const AniList = (function () {
+    const API = "https://graphql.anilist.co";
+    const PAGE_SIZE = 20;
+
+    // GraphQL query for manga search with rich metadata
+    const SEARCH_QL = `
+      query ($q: String, $page: Int, $perPage: Int) {
+        Page(page: $page, perPage: $perPage) {
+          media(search: $q, type: MANGA, sort: [SEARCH_MATCH, POPULARITY_DESC]) {
+            id
+            title { romaji english native }
+            description
+            format
+            status
+            startDate { year }
+            genres
+            averageScore
+            meanScore
+            popularity
+            favourites
+            coverImage { large color }
+            bannerImage
+            tags { name rank }
+            recommendations(page:1, perPage:5, sort:[RATING_DESC]) {
+              nodes { mediaRecommendation { id title { romaji english } coverImage { large } } }
+            }
+          }
+        }
+      }`;
+
+    // GraphQL query for trending/popular manga
+    const TRENDING_QL = `
+      query ($page: Int, $perPage: Int) {
+        Page(page: $page, perPage: $perPage) {
+          media(type: MANGA, sort: [TRENDING_DESC, POPULARITY_DESC]) {
+            id
+            title { romaji english native }
+            description
+            format
+            status
+            startDate { year }
+            genres
+            averageScore
+            meanScore
+            popularity
+            favourites
+            coverImage { large color }
+          }
+        }
+      }`;
+
+    function normalize(item) {
+      const t = item.title || {};
+      const title = t.english || t.romaji || t.native || "Untitled";
+      return {
+        provider: "anilist",
+        id: "al:" + item.id, rawId: item.id,
+        title: title,
+        altTitles: [t.romaji, t.native, t.english].filter(Boolean),
+        author: "",
+        genres: (item.genres || []).slice(0, 6),
+        status: item.status ? item.status.toLowerCase().replace(/_/g, " ") : "unknown",
+        rating: item.averageScore ? +(item.averageScore / 10).toFixed(1) : null,
+        popularity: item.popularity || 0,
+        score: item.meanScore || null,
+        year: (item.startDate && item.startDate.year) || null,
+        description: item.description
+          ? item.description.replace(/<[^>]+>/g, "").replace(/\s+/g, " ").trim().slice(0, 500)
+          : "No description available.",
+        cover: (item.coverImage && item.coverImage.large) || "",
+        coverColor: (item.coverImage && item.coverImage.color) || null,
+        banner: item.bannerImage || null,
+        tags: (item.tags || []).filter(t => t && t.rank >= 70).map(t => t.name).slice(0, 8),
+        source: "live",
+        chapters: null
+      };
+    }
+
+    // Post to GraphQL endpoint
+    async function graphql(query, vars) {
+      const r = await fetch(API, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "Accept": "application/json" },
+        body: JSON.stringify({ query, variables: vars || {} })
+      });
+      if (!r.ok) throw new Error("AniList HTTP " + r.status);
+      const d = await r.json();
+      if (d.errors) throw new Error(d.errors[0].message);
+      return d.data;
+    }
+
+    return {
+      id: "anilist", label: "AniList",
+
+      // Search manga by title
+      async search(query, { limit = PAGE_SIZE } = {}) {
+        const data = await graphql(SEARCH_QL, { q: query, page: 1, perPage: limit });
+        if (!data || !data.Page || !data.Page.media) return [];
+        return data.Page.media.map(normalize);
+      },
+
+      // Get trending/popular manga
+      async trending({ limit = PAGE_SIZE } = {}) {
+        const data = await graphql(TRENDING_QL, { page: 1, perPage: limit });
+        if (!data || !data.Page || !data.Page.media) return [];
+        return data.Page.media.map(normalize);
+      },
+
+      // Enrich a manga object with AniList data (better description, genres, tags)
+      async enrich(manga) {
+        if (!manga || !manga.title) return manga;
+        try {
+          // Try exact title search first
+          const results = await this.search(manga.title, { limit: 5 });
+          // Find best match by comparing titles
+          const best = results.find(r => {
+            const mt = manga.title.toLowerCase().replace(/[^a-z0-9]/g, "");
+            const rt = (r.title || "").toLowerCase().replace(/[^a-z0-9]/g, "");
+            return rt.includes(mt) || mt.includes(rt) ||
+              (r.altTitles || []).some(a => {
+                const at = (a || "").toLowerCase().replace(/[^a-z0-9]/g, "");
+                return at.includes(mt) || mt.includes(at);
+              });
+          }) || results[0];
+          if (best) {
+            // Merge: prefer AniList description (often cleaner than MD's raw HTML)
+            if (best.description && best.description !== "No description available." &&
+                best.description.length > (manga.description || "").length) {
+              manga.description = best.description;
+            }
+            manga.genres = best.genres.length ? best.genres : manga.genres;
+            manga.popularity = best.popularity || manga.popularity;
+            manga.score = best.score || manga.rating;
+            manga.coverColor = best.coverColor || manga.coverColor;
+            manga.tags = best.tags || manga.tags;
+          }
+        } catch (e) { /* fail soft */ }
+        return manga;
+      }
+    };
+  })();
+
+
   // Priority order. MangaDex first (reliable), then best-effort extras.
-  const PROVIDERS = [MangaDex, Comick, Consumet, MangaPlus];
+  const PROVIDERS = [MangaDex, Comick, Consumet, MangaPlus, AniList];
   const byId = (id) => PROVIDERS.find(p => p.id === id);
 
   /* ============================================================
@@ -697,6 +847,28 @@
        Real MangaPlus / Shonen Jump catalogue (Shueisha), resolved via
        MangaDex so covers + chapters genuinely load in-browser. Fails
        soft to a slice of the sample set so the shelf is never empty. */
+    /* ---- ANILIST TRENDING SHELF ----
+       Richer trending/popular manga from AniList's GraphQL API.
+       Fails soft to a MangaDex popularity sort. */
+    async trendingShelf({ limit = 10 } = {}) {
+      try {
+        const items = await AniList.trending({ limit });
+        if (items.length) { setMode("live"); return items; }
+      } catch (e) {}
+      try {
+        const items = await MangaDex.list({ limit, sort: "rating" });
+        if (items.length) return items;
+      } catch (e) {}
+      return (window.MangaData.sampleFor("sfw") || []).slice(0, limit);
+    },
+
+    /* ---- ANILIST ENRICHMENT ----
+       Add richer metadata (description, genres, popularity, tags) to
+       a manga object. Safe no-op when AniList is unreachable. */
+    async enrich(manga) {
+      try { return await AniList.enrich(manga); } catch (e) { return manga; }
+    },
+
     async mangaPlusShelf({ limit = 12 } = {}) {
       try {
         const items = await MangaPlus.list({ limit });

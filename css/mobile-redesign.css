@@ -187,12 +187,26 @@
   .bn-badge { background: var(--ref-badge); border: 2px solid var(--ref-bg); }
 
   /* very small screens: shrink text a touch and drop the Post label so the
-     six touch targets stay comfortable and never collide */
-  @media (max-width: 380px) {
+     seven touch targets stay comfortable and never collide */
+  @media (max-width: 400px) {
     .bn-item { font-size: 9px; }
     .bn-item [data-lucide] { width: 21px; height: 21px; }
     .bn-post span { display: none; }
   }
+
+  /* ============================================================
+     AUTH MODAL — compact on mobile
+     ============================================================ */
+  .modal-overlay { padding: 10px; align-items: flex-start; padding-top: 8vh; }
+  .modal { padding: 22px 18px; max-width: 380px; border-radius: 18px; }
+  .auth-form h2 { font-size: 1.2rem; }
+  .auth-form input { padding: 10px 12px; font-size: .9rem; }
+  .auth-form label { margin-bottom: 10px; font-size: .8rem; }
+  .auth-sub { font-size: .82rem; margin-bottom: 14px; }
+  .auth-tabs { margin-bottom: 16px; }
+  .auth-tab { padding: 8px; font-size: .9rem; }
+  .auth-note { font-size: .75rem; margin-top: 12px; flex-wrap: wrap; text-align: center; }
+  .auth-form .btn-block { padding: 11px; font-size: .9rem; }
 
   /* ============================================================
      SOCIAL PAGES (feed / chat / profile / search / notifications)
@@ -227,7 +241,7 @@
 }
 
 /* extra-small phones (≤380px) — nudge the header cluster spacing */
-@media (max-width: 380px) {
+@media (max-width: 400px) {
   .nav-inner { gap: 4px; padding: 0 8px; }
   .brand { font-size: 1.02rem; }
   .brand-text { max-width: 96px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
@@ -345,6 +359,7 @@
     padding: calc(14px + env(safe-area-inset-top)) 12px calc(16px + env(safe-area-inset-bottom));
     z-index: 1200;
     overflow-y: auto;
+    background: var(--ref-bg);
   }
   .nav-mobile.open { transform: translateX(0); }
   /* little brand header at the top of the drawer */
@@ -361,8 +376,7 @@
   }
   .drawer-backdrop {
     position: fixed; inset: 0;
-    background: rgba(4,8,14,.55);
-    -webkit-backdrop-filter: blur(2px); backdrop-filter: blur(2px);
+    background: rgba(4,8,14,.78);
     opacity: 0; visibility: hidden;
     transition: opacity .28s ease, visibility .28s ease;
     z-index: 1150;
