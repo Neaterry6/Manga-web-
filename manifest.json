@@ -1,0 +1,25 @@
+{
+  "name": "MangaVerse",
+  "short_name": "MangaVerse",
+  "description": "A modern manga reader with live MangaDex integration, bookmarks, reading history and social features.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0b131e",
+  "theme_color": "#0b131e",
+  "orientation": "any",
+  "scope": "/",
+  "categories": ["entertainment", "books", "comics"],
+  "icons": [
+    {
+      "src": "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'%3E%3Crect width='512' height='512' rx='64' fill='%230b131e'/%3E%3Cpath d='M160 128h192v256H160z' fill='%2300bcd4' opacity='.2'/%3E%3Cpath d='M192 160h128v192H192z' fill='%2300bcd4'/%3E%3Cpath d='M224 192h64v128h-64z' fill='%2306121a'/%3E%3Ctext x='256' y='420' font-family='sans-serif' font-size='48' font-weight='800' fill='%2300bcd4' text-anchor='middle'%3EMV%3C/text%3E%3C/svg%3E",
+      "sizes": "512x512",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ],
+  "screenshots": [],
+  "prefer_related_applications": false,
+  "related_applications": [],
+  "lang": "en",
+  "dir": "ltr"
+}

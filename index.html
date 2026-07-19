@@ -31,6 +31,10 @@
   <!-- v14 -->
   <link rel="stylesheet" href="css/styles.css?v=18" />
   <link rel="stylesheet" href="css/mobile-redesign.css?v=18" />
+  <link rel="manifest" href="manifest.json" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="MangaVerse" />
 </head>
 <body>
   <!-- Animated background -->
@@ -183,5 +187,60 @@
   <script src="js/translate.js?v=18"></script>
   <script src="js/api.js?v=18"></script>
   <script src="js/app.js?v=18"></script>
+  <!-- Service worker + install prompt -->
+  <script>
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('sw.js').catch(() => {});
+    });
+  }
+  let installPrompt = null;
+  window.addEventListener('beforeinstallprompt', e => {
+    e.preventDefault();
+    installPrompt = e;
+    // Show install banner after a short delay
+    setTimeout(() => {
+      const existing = document.getElementById('installBanner');
+      if (!existing && !document.querySelector('.install-banner')) {
+        const banner = document.createElement('div');
+        banner.id = 'installBanner';
+        banner.className = 'install-banner';
+        banner.innerHTML = '<div class="install-banner-inner"><div class="install-banner-icon"><i data-lucide="download"></i></div><div class="install-banner-text"><strong>Install MangaVerse</strong><span>Add to your home screen for the best experience</span></div><button class="btn btn-primary btn-sm" id="installBtn">Install</button><button class="btn btn-ghost btn-sm" id="installDismiss">Not now</button></div>';
+        document.body.appendChild(banner);
+        banner.querySelector('#installBtn').addEventListener('click', () => {
+          installPrompt.prompt();
+          installPrompt.userChoice.then(() => { banner.remove(); installPrompt = null; });
+        });
+        banner.querySelector('#installDismiss').addEventListener('click', () => {
+          banner.remove();
+          localStorage.setItem('mv_install_dismissed', '1');
+        });
+        if (window.lucide) window.lucide.createIcons();
+      }
+    }, 3000);
+  });
+  window.addEventListener('appinstalled', () => {
+    const b = document.getElementById('installBanner');
+    if (b) b.remove();
+  });
+  // Show install option in settings too
+  if (document.getElementById('navAccount')) {
+    const observer = new MutationObserver(() => {
+      const settingsCard = document.querySelector('.settings-card:last-child');
+      if (settingsCard && !document.getElementById('installSettingsBtn') && !localStorage.getItem('mv_install_dismissed')) {
+        const installRow = document.createElement('div');
+        installRow.className = 'settings-card';
+        installRow.innerHTML = '<h2><i data-lucide="smartphone"></i> Install App</h2><p class="muted">Add MangaVerse to your home screen for a full-screen app experience.</p><div class="settings-actions"><button class="btn btn-primary" id="installSettingsBtn"><i data-lucide="download"></i> Install App</button></div></div>';
+        settingsCard.parentNode.insertBefore(installRow, settingsCard.nextSibling);
+        document.getElementById('installSettingsBtn').addEventListener('click', () => {
+          if (installPrompt) { installPrompt.prompt(); installPrompt.userChoice.then(() => { installPrompt = null; }); }
+          else { toast('Open this page in Chrome or Edge and look for "Add to Home Screen" in the menu.', 'info'); }
+        });
+        if (window.lucide) window.lucide.createIcons();
+      }
+    });
+    observer.observe(document.getElementById('navAccount'), { childList: true, subtree: true });
+  }
+  </script>
 </body>
 </html>

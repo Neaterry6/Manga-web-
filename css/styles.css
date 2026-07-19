@@ -1232,3 +1232,28 @@ mark.msg-hl { background: rgba(0,212,255,.35); color: #fff; border-radius: 3px; 
 .oauth-btn img { width: 20px; height: 20px; }
 .oauth-btn i { width: 20px; height: 20px; }
 .oauth-btn:disabled { opacity: .5; pointer-events: none; }
+
+/* ---------- install banner (PWA) ---------- */
+.install-banner {
+  position: fixed; bottom: calc(var(--bn-h, 62px) + env(safe-area-inset-bottom)); left: 0; right: 0;
+  z-index: 100; padding: 0 10px 10px; animation: slideUp .35s ease;
+}
+@keyframes slideUp { from { transform: translateY(100%); opacity: 0; } }
+.install-banner-inner {
+  display: flex; align-items: center; gap: 10px;
+  background: var(--surface); border: 1px solid var(--glass-border);
+  border-radius: 16px; padding: 12px 14px; box-shadow: 0 8px 30px rgba(0,0,0,.5);
+}
+.install-banner-icon {
+  width: 40px; height: 40px; display: grid; place-items: center;
+  background: linear-gradient(135deg, var(--accent), var(--accent-2));
+  border-radius: 10px; color: #fff; flex-shrink: 0;
+}
+.install-banner-text { flex: 1; min-width: 0; }
+.install-banner-text strong { display: block; font-size: .9rem; }
+.install-banner-text span { display: block; font-size: .78rem; color: var(--text-dim); }
+.install-banner .btn { flex-shrink: 0; }
+
+@media (max-width: 720px) {
+  .install-banner { bottom: calc(var(--bn-h) + env(safe-area-inset-bottom)); }
+}
