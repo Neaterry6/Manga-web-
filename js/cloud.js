@@ -30,7 +30,7 @@
   
   // Pre-configured defaults (overridable in Settings)
   const DEFAULT_URL = "https://uwuzcrivtmftachqgezq.supabase.co";
-  const DEFAULT_KEY = "sb_publishable_6az-XWNlGaeN104zWDwYpg_UQeTt0NE";
+  const DEFAULT_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InV3dXpjcml2dG1mdGFjaHFnZXpxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODQ0NDM4OTUsImV4cCI6MjEwMDAxOTg5NX0.S8bYEGrT5GvgXckcrGigcVUFfypd4F4umUOteOlbCvI";
   
   // Auto-configure on first load if not already set
   function ensureConfig() {
