@@ -862,7 +862,12 @@
         else if (/search|find|look for/.test(low)) { cmd = "search"; arg = t.replace(/.*?(search|find|look for)/i, "").trim(); }
         else if (/info|about|synopsis|summary/.test(low)) { cmd = "info"; arg = t.replace(/.*?(info|about|synopsis|summary)( on| for| of)?/i, "").trim(); }
         else if (/imagine|generate|draw|create|make/.test(low)) { cmd = "imagine"; arg = t.replace(/.*?(imagine|generate|draw|create|make)( me| a| an| the| of)?/i, "").trim(); }
-        else { cmd = "help"; }
+        else if (/hi|hello|hey|sup|yo|howdy|good morning|good evening|what.up/.test(low)) { cmd = "greet"; }
+        else if (/how.are.you|howz.it|how.do|hru/.test(low)) { cmd = "howareyou"; }
+        else if (/who.are.you|what.are.you|tell.me.about/.test(low)) { cmd = "aboutbot"; }
+        else if (/bye|goodbye|see.ya|later|cya/.test(low)) { cmd = "farewell"; }
+        else if (/thanks|thank.you|thx|appreciate/.test(low)) { cmd = "thanks"; }
+        else { cmd = "converse"; }
       }
       const MS = window.MangaSource;
       const line = m => "• " + m.title + (m.genres && m.genres.length ? " — " + m.genres.slice(0, 2).join(", ") : "") + (m.rating ? " ★" + m.rating : "");
@@ -875,6 +880,25 @@
       try {
         if (cmd === "help" || cmd === "commands" || cmd === "start") {
           return { text: "🤖 MangaBot commands:\n/recommend — a few picks for you\n/trending — what's hot right now\n/search <title> — find manga\n/info <title> — synopsis & details\n/imagine <prompt> — generate an image\n/help — this message\n(You can also just say \"recommend something\" or \"@mangabot search dragon\".)", refs: [] };
+        }
+        if (cmd === "greet") {
+          return { text: "👋 Hey there! I'm MangaBot. I can recommend manga, search titles, show what's trending, and even generate images with /imagine. Try saying \"recommend something\" or \"what's trending\"!", refs: [] };
+        }
+        if (cmd === "howareyou") {
+          return { text: "🤖 I'm doing great, thanks for asking! Always ready to help you find awesome manga to read. What are you in the mood for?", refs: [] };
+        }
+        if (cmd === "aboutbot") {
+          return { text: "🤖 I'm MangaBot — your manga assistant! I live in MangaVerse and help you discover manga. I can recommend titles, search for specific manga, show trending series, give you info and synopses, and even generate images with /imagine. What would you like to explore?", refs: [] };
+        }
+        if (cmd === "farewell") {
+          return { text: "👋 Catch you later! Come back anytime you want manga recommendations or just to chat. Happy reading! 📚", refs: [] };
+        }
+        if (cmd === "thanks") {
+          return { text: "😊 You're welcome! Happy to help. Let me know if you want any manga recommendations or have other questions!", refs: [] };
+        }
+        if (cmd === "converse") {
+          const phrases = ["That's interesting! Tell me more about what kind of manga you enjoy — action, romance, fantasy, horror?", "I'm not sure what you mean, but I can help find manga! Try /search <title> or just say what genre you like.", "Hmm, I'm best at helping with manga. Want me to recommend something or search for a specific title?", "I didn't quite catch that, but I'm here to help! Try /recommend for personalized picks or /trending for popular titles."];
+          return { text: "🤖 " + phrases[Math.floor(Math.random() * phrases.length)], refs: [] };
         }
         if (cmd === "trending" || cmd === "popular") {
           const list = MS ? await MS.list({ limit: 5 }) : [];
