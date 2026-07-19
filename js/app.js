@@ -240,7 +240,7 @@
     if (errEl) errEl.textContent = "";
     if (successEl) successEl.style.display = "none";
     if (!email || !email.includes("@")) { if (errEl) errEl.textContent = "Enter a valid email."; return; }
-    if (window.Cloud && window.Cloud.hasAuth && window.Cloud.hasAuth()) {
+    if (window.Cloud && window.Cloud.client && window.Cloud.client.auth) {
       try {
         var res = await window.Cloud.client.auth.resetPasswordForEmail(email, {
           redirectTo: window.location.origin + window.location.pathname
@@ -250,7 +250,7 @@
         toast("Reset link sent! Check your email.", "success");
       } catch (ex) { if (errEl) errEl.textContent = ex.message || "Failed to send reset email."; }
     } else {
-      if (successEl) { successEl.style.display = "block"; successEl.textContent = "Connect Supabase in Settings to enable password reset."; }
+      if (successEl) { successEl.style.display = "block"; successEl.textContent = "⚠️ Supabase Auth not ready. Open Settings to connect Supabase first."; }
     }
   });
   
