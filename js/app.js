@@ -216,8 +216,13 @@
   };
   document.addEventListener("click", function(e) {
     var btn = e.target.closest(".oauth-btn");
-    if (!btn || !window.Cloud) return;
+    if (!btn) return;
     var provider = btn.dataset.provider;
+    // If Supabase isn't connected, show setup instructions
+    if (!window.Cloud || !window.Cloud.hasAuth || !window.Cloud.hasAuth()) {
+      toast("Set up Supabase in Settings first to enable " + provider + " login.", "info");
+      return;
+    }
     btn.disabled = true; btn.textContent = "Redirecting...";
     window.Cloud.authWithOAuth(provider).catch(function(err) {
       btn.disabled = false;

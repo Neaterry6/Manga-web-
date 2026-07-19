@@ -195,18 +195,21 @@
   }
 
   /* ============================================================
-     AUTH MODAL — compact on mobile
+     AUTH MODAL — compact on mobile (redesigned)
      ============================================================ */
-  .modal-overlay { padding: 10px; align-items: flex-start; padding-top: 8vh; }
-  .modal { padding: 22px 18px; max-width: 380px; border-radius: 18px; }
-  .auth-form h2 { font-size: 1.2rem; }
-  .auth-form input { padding: 10px 12px; font-size: .9rem; }
-  .auth-form label { margin-bottom: 10px; font-size: .8rem; }
-  .auth-sub { font-size: .82rem; margin-bottom: 14px; }
-  .auth-tabs { margin-bottom: 16px; }
-  .auth-tab { padding: 8px; font-size: .9rem; }
-  .auth-note { font-size: .75rem; margin-top: 12px; flex-wrap: wrap; text-align: center; }
-  .auth-form .btn-block { padding: 11px; font-size: .9rem; }
+  .modal-overlay { padding: 10px; align-items: flex-start; padding-top: 3vh; }
+  .modal { max-width: 100%; border-radius: 20px; }
+  .auth-header { padding: 22px 20px 16px; }
+  .auth-header-icon { width: 44px; height: 44px; font-size: 1.3rem; margin-bottom: 10px; }
+  .auth-tabs { max-width: 200px; }
+  .oauth-section { padding: 14px 20px 0; }
+  .auth-form { padding: 4px 20px 18px; }
+  .auth-field { margin-bottom: 10px; }
+  .auth-field input { padding: 10px 12px; font-size: .88rem; }
+  .auth-form h2 { font-size: 1.1rem; }
+  .auth-sub { font-size: .8rem; }
+  .auth-note { padding: 12px 20px 16px; font-size: .74rem; }
+  .auth-submit { padding: 11px; }
 
   /* ============================================================
      SOCIAL PAGES (feed / chat / profile / search / notifications)

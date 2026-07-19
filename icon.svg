@@ -1,0 +1,32 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#0b131e"/>
+      <stop offset="100%" stop-color="#1a1a2e"/>
+    </linearGradient>
+    <linearGradient id="book" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#00bcd4"/>
+      <stop offset="50%" stop-color="#6c5ce7"/>
+      <stop offset="100%" stop-color="#ff4d8d"/>
+    </linearGradient>
+  </defs>
+  <rect width="512" height="512" rx="96" fill="url(#bg)"/>
+  <!-- Book icon -->
+  <g transform="translate(256,250)">
+    <!-- Left page -->
+    <path d="M-80-100h80v200h-80c-15 0-28-13-28-28v-144c0-15 13-28 28-28z" fill="url(#book)" opacity=".6"/>
+    <!-- Right page -->
+    <path d="M0-100h80v200h-80c-15 0-28-13-28-28v-144c0-15 13-28 28-28z" fill="url(#book)"/>
+    <!-- Spine -->
+    <rect x="-4" y="-100" width="8" height="200" fill="#fff" opacity=".15" rx="4"/>
+    <!-- Pages lines -->
+    <line x1="-55" y1="-50" x2="-12" y2="-50" stroke="#fff" stroke-width="3" opacity=".3" stroke-linecap="round"/>
+    <line x1="-55" y1="-20" x2="-12" y2="-20" stroke="#fff" stroke-width="3" opacity=".2" stroke-linecap="round"/>
+    <line x1="12" y1="-50" x2="55" y2="-50" stroke="#fff" stroke-width="3" opacity=".4" stroke-linecap="round"/>
+    <line x1="12" y1="-20" x2="55" y2="-20" stroke="#fff" stroke-width="3" opacity=".3" stroke-linecap="round"/>
+    <!-- Star on cover -->
+    <polygon points="0,30 8,48 28,48 12,60 18,78 0,66 -18,78 -12,60 -28,48 -8,48" fill="#00e5ff" opacity=".8"/>
+  </g>
+  <!-- MV text -->
+  <text x="256" y="420" font-family="'Segoe UI','Helvetica Neue',sans-serif" font-size="64" font-weight="800" fill="#00bcd4" text-anchor="middle" letter-spacing="8">MV</text>
+</svg>
