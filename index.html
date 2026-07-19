@@ -133,9 +133,26 @@
         <div class="auth-field">
           <label>Password</label>
           <input type="password" name="password" autocomplete="current-password" placeholder="Enter your password" required />
+          <button type="button" class="auth-forgot-btn" id="forgotPwdBtn">Forgot password?</button>
         </div>
         <div class="form-error" data-error></div>
         <button type="submit" class="btn btn-primary btn-block auth-submit">Log In</button>
+      </form>
+
+      <!-- Forgot password form -->
+      <form class="auth-form hidden" id="forgotForm" novalidate>
+        <div class="auth-form-header">
+          <h2>Reset password</h2>
+          <p class="auth-sub">Enter your email and we'll send a reset link.</p>
+        </div>
+        <div class="auth-field">
+          <label>Email</label>
+          <input type="email" name="resetEmail" placeholder="your@email.com" required />
+        </div>
+        <div class="form-error" data-error></div>
+        <p class="form-success" id="resetSuccess" style="display:none;color:var(--good);font-size:.85rem;margin-bottom:10px;">✅ Reset link sent! Check your email.</p>
+        <button type="submit" class="btn btn-primary btn-block auth-submit">Send Reset Link</button>
+        <button type="button" class="btn btn-ghost btn-block auth-submit" id="backToLoginBtn" style="margin-top:8px">← Back to login</button>
       </form>
 
       <form class="auth-form hidden" id="signupForm" novalidate>

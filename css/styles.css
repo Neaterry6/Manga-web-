@@ -1301,3 +1301,12 @@ mark.msg-hl { background: rgba(0,212,255,.35); color: #fff; border-radius: 3px; 
 @media (max-width: 720px) {
   .install-banner { bottom: calc(var(--bn-h) + env(safe-area-inset-bottom)); }
 }
+
+/* ---------- forgot password button ---------- */
+.auth-forgot-btn {
+  background: none; border: none; color: var(--accent-2);
+  font-size: .8rem; cursor: pointer; padding: 4px 0 0;
+  display: inline-block; transition: opacity .2s;
+}
+.auth-forgot-btn:hover { opacity: .8; text-decoration: underline; }
+.form-success { color: var(--good); font-size: .85rem; margin-bottom: 10px; display: none; }

@@ -219,6 +219,41 @@
   authModal.addEventListener("click", e => { if (e.target === authModal) closeAuth(); });
   $$(".auth-tab", authModal).forEach(t => t.addEventListener("click", () => switchAuthTab(t.dataset.tab)));
 
+  // Forgot password flow
+  if ($("#forgotPwdBtn")) $("#forgotPwdBtn").addEventListener("click", function() {
+    $("#loginForm").classList.add("hidden");
+    $("#forgotForm").classList.remove("hidden");
+    $("#signupForm").classList.add("hidden");
+    $$(".auth-tab").forEach(function(t) { t.classList.remove("active"); });
+  });
+  if ($("#backToLoginBtn")) $("#backToLoginBtn").addEventListener("click", function() {
+    $("#forgotForm").classList.add("hidden");
+    $("#loginForm").classList.remove("hidden");
+    $$(".auth-tab").forEach(function(t) { t.classList.toggle("active", t.dataset.tab === "login"); });
+    var s = $("#resetSuccess"); if (s) s.style.display = "none";
+  });
+  $("#forgotForm").addEventListener("submit", async function(e) {
+    e.preventDefault();
+    var email = e.target.resetEmail.value.trim();
+    var errEl = $("[data-error]", e.target);
+    var successEl = $("#resetSuccess");
+    if (errEl) errEl.textContent = "";
+    if (successEl) successEl.style.display = "none";
+    if (!email || !email.includes("@")) { if (errEl) errEl.textContent = "Enter a valid email."; return; }
+    if (window.Cloud && window.Cloud.hasAuth && window.Cloud.hasAuth()) {
+      try {
+        var res = await window.Cloud.client.auth.resetPasswordForEmail(email, {
+          redirectTo: window.location.origin + window.location.pathname
+        });
+        if (res.error) throw res.error;
+        if (successEl) { successEl.style.display = "block"; successEl.textContent = "Reset link sent! Check your email."; }
+        toast("Reset link sent! Check your email.", "success");
+      } catch (ex) { if (errEl) errEl.textContent = ex.message || "Failed to send reset email."; }
+    } else {
+      if (successEl) { successEl.style.display = "block"; successEl.textContent = "Connect Supabase in Settings to enable password reset."; }
+    }
+  });
+  
   $("#loginForm").addEventListener("submit", async e => {
     e.preventDefault();
     const f = e.target, errEl = $("[data-error]", f);
