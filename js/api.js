@@ -50,9 +50,11 @@
      live data never depends on flaky public proxies. Until configured, the
      public proxy chain is used (site works out of the box). */
   const WORKER_KEY = "mv_worker_url";
+  const DEFAULT_WORKER = "https://broken-block-4d61.trusto2856.workers.dev";
   function workerUrl() {
     try {
-      const u = (localStorage.getItem(WORKER_KEY) || "").trim().replace(/\/+$/, "");
+      let u = (localStorage.getItem(WORKER_KEY) || "").trim().replace(/\/+$/, "");
+      if (!u && DEFAULT_WORKER) { u = DEFAULT_WORKER; }
       return /^https?:\/\//.test(u) ? u : "";
     } catch (e) { return ""; }
   }
